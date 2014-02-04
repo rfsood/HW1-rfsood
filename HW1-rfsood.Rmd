@@ -66,11 +66,8 @@ gse_gpl <- as.data.table(dbGetQuery(con, "Select gse_gpl.gse, gse_gpl.gpl FROM g
 # Close the connection
 dbDisconnect(con)
 
-# Join the tables using two right-joins
-DT <- merge(x = merge(x = gse, y = gse_gpl, by = "gse", all.y=TRUE), y = gpl, by = "gpl", all.y=TRUE)
-
-# Return rows where title contains "Hepatitis C", contact contains "Yale", and manufacturer contains "Illumina"
-DT[title %like% "Hepatitis C"][contact %like% "Yale"][manufacturer %like% "Illumina"]
+# Join the tables using two right-joins and return rows where title contains "Hepatitis C", manufacturer contains "Illumina", and contact contains "Yale"
+merge(x = merge(x = gse, y = gse_gpl, by = "gse", all.y=TRUE), y = gpl, by = "gpl", all.y=TRUE)[title %like% "Hepatitis C"][contact %like% "Yale"][manufacturer %like% "Illumina"]
 ```
 
 Running the above code yields the same result as in part (1).
