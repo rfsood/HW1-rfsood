@@ -1,0 +1,76 @@
+Ravi Sood
+February 4, 2014
+BIOST 578
+Homework 1
+========================================================
+
+1. Use the GEOmetabd package to find all HCV gene expression data using the Illumina platform submitted by an investigator at Yale. This should be done with a single query, showing the title, the GSE accession number, the GPL accession number and the manufacturer and the description of the platform used.
+
+First, install bioconductor and download the database:
+```{r eval=FALSE}
+# Install bioconductor packages
+source("http://bioconductor.org/biocLite.R")
+biocLite()
+
+# Download the database
+getSQLiteFile()
+```
+
+Next, connect to and query the database:
+```{r}
+# Load GEOmetadb package
+library(GEOmetadb)
+
+# Connect to the database
+con <- dbConnect(SQLite(),'GEOmetadb.sqlite')
+
+# Query the database
+dbGetQuery(con, "SELECT gse.title, gse.gse, gpl.gpl, gpl.manufacturer, gpl.technology, gse.contact FROM (gse JOIN gse_gpl ON gse.gse = gse_gpl.gse) JOIN gpl ON gse_gpl.gpl=gpl.gpl WHERE gse.title LIKE '%Hepatitis C%' AND gpl.manufacturer LIKE '%Illumina%' AND gse.contact LIKE '%Yale%'")
+
+```
+
+Running the above code yields the following result:
+
+title
+Impaired TLR3-mediated immune responses from macrophages of patients chronically infected with Hepatitis C virus
+       
+gse
+GSE40812
+
+gpl
+GPL10558
+
+manufacturer
+Illumina Inc.
+
+technology
+oligonucleotide beads
+
+contact
+1 Name: Ruth,R,Montgomery;\tEmail: ruth.montgomery@yale.edu;\tDepartment: Internal Medicine;\tInstitute: Yale University School of Medicine;\tAddress: 300 Cedar St.;\tCity: New Haven;\tState: CT;\tZip/postal_code: 06520;\tCountry: USA
+
+2. Reproduce your above query using the data.table package. Again, try to use a single line of code. [Hint: You first need to convert all db tables to data.table tables].
+
+```{r}
+# Install data.table
+install.packages("data.table")
+
+# Load data.table
+libary(data.table)
+
+# Convert db tables to data.table tables
+gse <- as.data.table(dbGetQuery(con, "SELECT gse.title, gse.gse, gse.contact FROM gse"))
+gpl <- as.data.table(dbGetQuery(con, "SELECT gpl.gpl, gpl.manufacturer, gpl.technology FROM gpl"))
+gse_gpl <- as.data.table(dbGetQuery(con, "Select gse_gpl.gse, gse_gpl.gpl FROM gse_gpl"))
+
+# Close the connection
+dbDisconnect(con)
+
+# Join the tables using two right-joins
+DT <- merge(x = merge(x = gse, y = gse_gpl, by = "gse", all.y=TRUE), y = gpl, by = "gpl", all.y=TRUE)
+
+# Return rows where title contains "Hepatitis C", contact contains "Yale", and manufacturer contains "Illumina"
+DT[title %like% "Hepatitis C"][contact %like% "Yale"][manufacturer %like% "Illumina"]
+```
+
+Running the above code yields the same result as in part (1).
